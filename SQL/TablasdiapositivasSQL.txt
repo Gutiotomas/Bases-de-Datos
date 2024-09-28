@@ -1,0 +1,141 @@
+Nota: estas instrucciones funcionaron correctamente en
+Oracle 11g Express Edition, es posible que si se ejecutan
+en otro sistema de gestión de bases de datos, haya que
+hacer algunos cambios menores.
+
+/*Instrucciones de creación e inserción de las tablas EMPLEADO y
+ DEPARTAMENTO.
+*/
+
+CREATE TABLE empleado(
+codigo NUMBER(3) PRIMARY KEY,
+nombre VARCHAR2(20) NOT NULL,
+edad NUMBER(3), --Usualmente se guarda la fecha de nacimiento.
+depto NUMBER(2) --En este ejemplo NO es clave foránea
+);
+
+INSERT INTO empleado VALUES(1,'Jorge Campos', 33, 1);
+INSERT INTO empleado VALUES(2,'Enrique Muñoz', 25, 1);
+INSERT INTO empleado VALUES(3,'Esteban Paz', 21, 1);
+INSERT INTO empleado VALUES(8,'Jorge Arias', 30, 2);
+INSERT INTO empleado VALUES(10,'Juan Martínez', 19, 2);
+INSERT INTO empleado VALUES(12,'Anselmo Rodas', 28, NULL);
+--Nota: en esta última fila, cambiar el NULL por un 6 según el caso 
+
+CREATE TABLE departamento(
+depto NUMBER(2) PRIMARY KEY,
+descripcion VARCHAR2(20)
+);
+
+INSERT INTO departamento VALUES(1,'Administración');
+INSERT INTO departamento VALUES(2,'Producción');
+INSERT INTO departamento VALUES(3,'Ventas');
+INSERT INTO departamento VALUES(4,'Finanzas');
+
+--------------------------------------------------------
+--------------------------------------------------------
+/*Instrucciones de creación e inserción de las tablas 
+  SOCIO, PELÍCULA, COPIA y PRÉSTAMO. 
+*/
+
+CREATE TABLE socio(
+codsocio NUMBER(3) PRIMARY KEY, 
+nombre VARCHAR2(20) NOT NULL, 
+direccion VARCHAR2(20),
+telefono NUMBER(10)
+);
+
+INSERT INTO socio VALUES(1,'Kate','cl 33','23499');
+INSERT INTO socio VALUES(2,'Billy','cl 73','26777');
+
+CREATE TABLE pelicula (
+codpeli NUMBER(5) PRIMARY KEY, 
+titulo VARCHAR2(20) NOT NULL, 
+genero VARCHAR2(20)
+);
+
+INSERT INTO pelicula VALUES(10,'La Fuga','Suspenso');
+INSERT INTO pelicula VALUES(20,'Angel of Love','Romance');
+INSERT INTO pelicula VALUES(30,'La Fuga','Suspenso');
+
+CREATE TABLE copia (
+codcopia NUMBER(6) PRIMARY KEY, 
+codpeli NUMBER(5) NOT NULL REFERENCES pelicula);
+
+INSERT INTO copia VALUES(1,10);
+INSERT INTO copia VALUES(2,10);
+INSERT INTO copia VALUES(3,10);
+
+INSERT INTO copia VALUES(4,20);
+INSERT INTO copia VALUES(5,20);
+
+INSERT INTO copia VALUES(6,30);
+
+CREATE TABLE prestamo(
+codsocio NUMBER(3) REFERENCES socio, 
+codcopia NUMBER(6) REFERENCES copia, 
+fecha_pres DATE, 
+fecha_dev DATE,
+PRIMARY KEY(codsocio, codcopia, fecha_pres)
+);
+
+INSERT INTO prestamo VALUES(1,1,SYSDATE,NULL);
+INSERT INTO prestamo VALUES(1,2,SYSDATE,NULL);
+INSERT INTO prestamo VALUES(1,3,SYSDATE,NULL);
+
+INSERT INTO prestamo VALUES(2,6,SYSDATE,NULL);
+INSERT INTO prestamo VALUES(2,6,SYSDATE-1,NULL);
+
+--------------------------------------------------------
+/*Instrucciones de creación e inserción de las tablas Proveedor(S), Producto(P) y Envío(SP).
+*/
+
+CREATE TABLE s( 
+ sn VARCHAR(2) PRIMARY KEY, 
+ snombre VARCHAR (10) NOT NULL,
+ situacion NUMBER(2) NOT NULL,
+ ciudad VARCHAR (10) NOT NULL
+);
+
+INSERT INTO s VALUES ('S1','Salazar',20,'Londres');
+INSERT INTO s VALUES ('S2','Jaramillo',10,'París');
+INSERT INTO s VALUES ('S3','Bernal',30,'París');
+INSERT INTO s VALUES ('S4','Caicedo',20,'Londres');
+INSERT INTO s VALUES ('S5','Aldana',30,'Atenas');
+
+CREATE TABLE p( 
+ pn VARCHAR (2) PRIMARY KEY, 
+ pnombre VARCHAR (15) NOT NULL,
+ color VARCHAR (15),
+ peso NUMBER(3) NOT NULL CHECK (peso >= 0), 
+ ciudad VARCHAR (15) NOT NULL
+);
+
+INSERT INTO p VALUES ('P1','Tuerca','Rojo',12,'Londres');
+INSERT INTO p VALUES ('P2','Perno','Verde',17,'París');
+INSERT INTO p VALUES ('P3','Tornillo','Azul',17,'Roma');
+INSERT INTO p VALUES ('P4','Tornillo','Rojo',14,'Londres');
+INSERT INTO p VALUES ('P5','Leva','Azul',12,'París');
+INSERT INTO p VALUES ('P6','Rueda','Rojo',19,'Londres');
+
+CREATE TABLE sp(
+ sn VARCHAR (2) REFERENCES s, 
+ pn VARCHAR (2) REFERENCES p, 
+ cantidad NUMBER(3) NOT NULL CHECK (cantidad > 0),
+ PRIMARY KEY (sn,pn)
+);
+
+INSERT INTO sp VALUES ('S1','P1',300);
+INSERT INTO sp VALUES ('S1','P2',200);
+INSERT INTO sp VALUES ('S1','P3',400);
+INSERT INTO sp VALUES ('S1','P4',200);
+INSERT INTO sp VALUES ('S1','P5',100);
+INSERT INTO sp VALUES ('S1','P6',100);
+INSERT INTO sp VALUES ('S2','P1',300);
+INSERT INTO sp VALUES ('S2','P2',400);
+INSERT INTO sp VALUES ('S3','P3',200);
+INSERT INTO sp VALUES ('S4','P2',200);
+INSERT INTO sp VALUES ('S4','P4',300);
+INSERT INTO sp VALUES ('S4','P5',400);
+
+

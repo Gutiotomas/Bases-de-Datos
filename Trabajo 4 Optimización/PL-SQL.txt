@@ -1,0 +1,40 @@
+Para el cambio de volumen de datossolo se cambia el valor en los loop:
+
+
+DECLARE 
+    -- Variables para almacenar valores
+    v_sn VARCHAR2(10);     
+    v_pn VARCHAR2(10);     
+
+BEGIN
+    -- Insertar datos en la tabla "s" usando MERGE para evitar duplicados
+    FOR i IN 1..100000 LOOP
+        MERGE INTO s USING DUAL ON (sn = 'S' || TO_CHAR(i))
+        WHEN NOT MATCHED THEN
+            INSERT (sn, snombre, ciudad)
+            VALUES ('S' || TO_CHAR(i), 'Supplier_' || TO_CHAR(i), 'City_' || TO_CHAR(i));
+    END LOOP;
+
+    -- Insertar datos en la tabla "p" usando MERGE para evitar duplicados
+    FOR i IN 1..100 LOOP
+        MERGE INTO p USING DUAL ON (pn = 'P' || TO_CHAR(i))
+        WHEN NOT MATCHED THEN
+            INSERT (pn, pnombre, color)
+            VALUES ('P' || TO_CHAR(i), 'Product_' || TO_CHAR(i), 'Color_' || TO_CHAR(i));
+    END LOOP;
+
+    -- Insertar combinaciones únicas en la tabla "sp" usando una sola consulta INSERT SELECT
+    INSERT INTO sp (sn, pn)
+    SELECT s.sn, p.pn
+    FROM s, p
+    WHERE NOT EXISTS (
+        SELECT 1 FROM sp 
+        WHERE sp.sn = s.sn AND sp.pn = p.pn
+    );
+
+    -- Confirmar los cambios
+    COMMIT;
+
+    DBMS_OUTPUT.PUT_LINE('Datos insertados correctamente en las tablas s, p y sp.');
+END;
+/

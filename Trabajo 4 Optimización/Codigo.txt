@@ -1,0 +1,234 @@
+Tablas:
+
+DROP TABLE sp;
+DROP TABLE s;
+DROP TABLE p;
+
+CREATE TABLE s(
+sn VARCHAR (10) PRIMARY KEY,
+snombre VARCHAR (20) NOT NULL,
+ciudad VARCHAR (20) NOT NULL
+);
+
+CREATE TABLE p(
+pn VARCHAR (10) PRIMARY KEY,
+pnombre VARCHAR (20) NOT NULL,
+color VARCHAR (15) NOT NULL
+);
+
+CREATE TABLE sp(
+sn VARCHAR (10) REFERENCES s,
+pn VARCHAR (10) REFERENCES p,
+PRIMARY KEY (sn,pn)
+);
+
+PL:
+
+DECLARE 
+    -- Variables para almacenar valores
+    v_sn VARCHAR2(10);     
+    v_pn VARCHAR2(10);     
+
+BEGIN
+    -- Insertar datos en la tabla "s" usando MERGE para evitar duplicados
+    FOR i IN 1..100000 LOOP
+        MERGE INTO s USING DUAL ON (sn = 'S' || TO_CHAR(i))
+        WHEN NOT MATCHED THEN
+            INSERT (sn, snombre, ciudad)
+            VALUES ('S' || TO_CHAR(i), 'Supplier_' || TO_CHAR(i), 'City_' || TO_CHAR(i));
+    END LOOP;
+
+    -- Insertar datos en la tabla "p" usando MERGE para evitar duplicados
+    FOR i IN 1..100 LOOP
+        MERGE INTO p USING DUAL ON (pn = 'P' || TO_CHAR(i))
+        WHEN NOT MATCHED THEN
+            INSERT (pn, pnombre, color)
+            VALUES ('P' || TO_CHAR(i), 'Product_' || TO_CHAR(i), 'Color_' || TO_CHAR(i));
+    END LOOP;
+
+    -- Insertar combinaciones únicas en la tabla "sp" usando una sola consulta INSERT SELECT
+    INSERT INTO sp (sn, pn)
+    SELECT s.sn, p.pn
+    FROM s, p
+    WHERE NOT EXISTS (
+        SELECT 1 FROM sp 
+        WHERE sp.sn = s.sn AND sp.pn = p.pn
+    );
+
+    -- Confirmar los cambios
+    COMMIT;
+
+    DBMS_OUTPUT.PUT_LINE('Datos insertados correctamente en las tablas s, p y sp.');
+END;
+/
+
+Eliminar datos para verificar consultas:
+
+DELETE FROM sp WHERE sn = 'S2' AND pn = 'P3';
+DELETE FROM sp WHERE sn = 'S5' AND pn = 'P4';
+DELETE FROM sp WHERE sn = 'S10' AND pn = 'P6';
+
+Consultas:
+
+Consulta 1
+
+ALTER SESSION SET SQL_TRACE = TRUE;
+
+SELECT *
+FROM s
+WHERE NOT EXISTS(SELECT *
+FROM p
+WHERE NOT EXISTS (SELECT *
+FROM sp
+WHERE sp.pn = p.pn
+AND
+sp.sn = s.sn
+)
+);
+
+Consulta 2.
+
+SELECT *
+FROM s
+WHERE (SELECT COUNT(*)
+FROM sp
+WHERE s.sn = sp.sn) = (SELECT COUNT(*) FROM p);
+
+Consulta 3.
+
+SELECT *
+FROM s
+WHERE sn IN (SELECT sn
+FROM sp
+GROUP BY sn
+HAVING COUNT(*) = (SELECT COUNT(*)
+FROM p)
+);
+
+Consulta 4. 
+
+SELECT s.sn, s.snombre, s.ciudad
+FROM s
+JOIN sp ON s.sn = sp.sn
+GROUP BY s.sn, s.snombre, s.ciudad
+HAVING COUNT(sp.pn) = (SELECT COUNT(p.pn) FROM p);
+
+ALTER SESSION SET SQL_TRACE = FALSE;
+
+Explain Plan:
+
+Consulta 1:
+
+DELETE plan_table;
+EXPLAIN PLAN FOR
+SELECT *
+FROM s
+WHERE NOT EXISTS(SELECT p.*
+FROM p
+WHERE NOT EXISTS (SELECT sp.*
+FROM sp
+WHERE sp.pn = p.pn
+AND
+sp.sn = s.sn
+)
+);
+SELECT *
+FROM table(DBMS_XPLAN.DISPLAY);
+
+Consulta 2:
+
+DELETE plan_table;
+EXPLAIN PLAN FOR
+SELECT *
+FROM s
+WHERE (SELECT COUNT(*)
+FROM sp
+WHERE s.sn = sp.sn) = (SELECT COUNT(*) FROM p);
+SELECT *
+FROM table(DBMS_XPLAN.DISPLAY);
+
+Consulta 3: 
+
+DELETE plan_table;
+EXPLAIN PLAN FOR
+SELECT *
+FROM s
+WHERE sn IN (SELECT sn
+FROM sp
+GROUP BY sn
+HAVING COUNT(*) = (SELECT COUNT(*)
+FROM p)
+);
+SELECT *
+FROM table(DBMS_XPLAN.DISPLAY);
+
+Consulta 4:
+
+DELETE plan_table;
+EXPLAIN PLAN FOR
+SELECT s.sn, s.snombre, s.ciudad
+FROM s
+JOIN sp ON s.sn = sp.sn
+GROUP BY s.sn, s.snombre, s.ciudad
+HAVING COUNT(sp.pn) = (SELECT COUNT(p.pn) FROM p);
+SELECT *
+FROM table(DBMS_XPLAN.DISPLAY);
+
+
+TK_PROF:
+
+ALTER SESSION SET SQL_TRACE = TRUE;
+
+ALTER SESSION SET SQL_TRACE = FALSE;
+
+SELECT value FROM v$diag_info WHERE name = 'Default Trace File';
+
+En cmd: 
+tkprof C:\APP\USUARIO\PRODUCT\21C\diag\rdbms\xe\xe\trace\xe_ora_15328.trc C:\Users\USUARIO\Documents\Universidad\outputfile.txt explain=SYSTEM/Tg050801
+
+
+Punto 2:
+
+Consulta 1:
+
+DELETE plan_table;
+EXPLAIN PLAN FOR
+SELECT s.*, (SELECT COUNT(*)
+FROM sp
+WHERE sp.sn = s.sn) AS cuantos
+FROM s;
+SELECT *
+FROM table(DBMS_XPLAN.DISPLAY);
+
+Consulta 2:
+
+DELETE plan_table;
+EXPLAIN PLAN FOR
+SELECT *
+FROM s
+NATURAL JOIN (SELECT sn, COUNT(*) AS cuantos
+FROM sp
+GROUP BY sn)
+UNION
+SELECT s.*, 0 AS cuantos
+FROM s WHERE sn NOT IN (SELECT sn FROM sp);
+SELECT *
+FROM table(DBMS_XPLAN.DISPLAY);
+
+Consulta 3:
+
+DELETE plan_table;
+EXPLAIN PLAN FOR
+SELECT sn, snombre, ciudad, NVL(sp_cuantos.cuantos, 0) AS cuantos
+FROM s
+NATURAL LEFT OUTER JOIN (
+  SELECT sn, COUNT(*) AS cuantos
+  FROM sp
+  GROUP BY sn
+) sp_cuantos;
+SELECT *
+FROM table(DBMS_XPLAN.DISPLAY);
+
+
+
+

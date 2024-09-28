@@ -1,0 +1,17 @@
+# Wait 60 seconds before connecting using these details, or login to https://console.neo4j.io to validate the Aura Instance is available
+NEO4J_URI=neo4j+s://037692ce.databases.neo4j.io
+NEO4J_USERNAME=neo4j
+NEO4J_PASSWORD=t7ofMCdffDUCHHYcfXyrdkFK2YACfZgY-HcDXOLl_G0
+AURA_INSTANCEID=037692ce
+AURA_INSTANCENAME=Instance01
+
+
+MongoDB
+conexión
+usuario: tgutierrez
+contraseña: Tg050801
+
+
+SQL Plus
+usuario: gutiotomas
+contraseña: Tg050801
