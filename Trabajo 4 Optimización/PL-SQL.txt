@@ -1,4 +1,4 @@
-Para el cambio de volumen de datossolo se cambia el valor en los loop:
+Para el cambio de volumen de datos solo se cambia el valor en los loop:
 
 
 DECLARE 
